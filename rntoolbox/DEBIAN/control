@@ -1,0 +1,8 @@
+Package: rntoolbox
+Version: 0.1.0
+Architecture: all
+Maintainer: tanguy2m <t2m@gmail.com>
+Depends: php5, php5-cli, mysql-server, libxml2-utils
+Section: contrib
+Priority: extra
+Description: Toolbox to manage ReadyNAS web apps
