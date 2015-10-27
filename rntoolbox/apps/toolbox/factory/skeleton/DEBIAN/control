@@ -1,0 +1,8 @@
+Package: skeleton_deb_name
+Version: skeleton_version
+Architecture: all
+Maintainer: tanguy2m <t2m@gmail.com>
+Depends: skeleton_depends
+Section: contrib
+Priority: extra
+Description: skeleton_description

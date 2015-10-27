@@ -1,0 +1,11 @@
+<Application resource-id="skeleton_rn_name"><!-- 'resource-id' must be AppName -->
+  <Name>skeleton_cap_name</Name><!-- Any descriptive name, up to 48 chars -->
+  <Author>tanguy2m</Author><!-- Authors name. up to 48 chars -->
+  <Version>skeleton_version</Version><!-- Version -->
+  <RequireReboot>0</RequireReboot><!-- If non-zero, it indicate reboot is required. -->
+  <ConfigURL/><!-- no configuration url -->
+  <LaunchURL>https://localhost/apps/skeleton_rn_name/</LaunchURL><!-- 'localhost' will be replaced by framework JS. -->
+  <DebianPackage>skeleton_deb_name</DebianPackage>
+  <ServiceName/><!-- no service required -->
+  <Description lang="en-us">skeleton_description</Description>
+</Application>
