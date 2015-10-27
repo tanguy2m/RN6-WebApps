@@ -37,6 +37,26 @@ case "$1" in
 		# 'Admin' share creation if necessary
 		adminSharePath=$(createShare admin cifs)
 
+		# MySQL root password creation
+		# Source: https://dev.mysql.com/doc/refman/5.5/en/password-security-user.html
+		MYSQL_CONFIG=~/.my.cnf
+		if [ ! -f "$MYSQL_CONFIG" ]; then
+			# Random password generation (10 alphanumerical characters)
+			MYSQL_PASS=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c10)
+			# Root password modification, whatever the host
+			mysql -u root -e "UPDATE mysql.user SET Password=PASSWORD('${MYSQL_PASS}') WHERE User='root'; FLUSH PRIVILEGES;"
+			# Storage in MySQL options file
+			cat > $MYSQL_CONFIG <<EOF
+[client]
+user="root"
+password="${MYSQL_PASS}"
+EOF
+			chmod 0600 $MYSQL_CONFIG
+		fi
+
+		# Vérificaton de la présence du share "mysql"
+		mysqlSharePath=$(createShare mysql)
+
 		# Copy default config files
 		confPath="/$adminSharePath/config/toolbox"
 		mkdir -p $confPath
