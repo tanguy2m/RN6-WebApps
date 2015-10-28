@@ -69,6 +69,12 @@ EOF
 			cp "$APPDIR/default-config/$file" "$confPath/$file$suffix"
 		done
 
+		# Factory set-up
+		factorySource="/$adminSharePath/factory"
+		mkdir -p $factorySource
+		chown admin:admin /apps/toolbox/factory $factorySource
+		cp /apps/toolbox/factory/package_sample.json $factorySource/
+
 		# Restart apache so that all site-enables will be updated
 		if systemctl restart apache2.service; then
 			# success

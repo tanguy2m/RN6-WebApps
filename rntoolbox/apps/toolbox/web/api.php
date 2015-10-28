@@ -125,11 +125,119 @@ class API {
 	}
 }
 
+class API_packages extends API {
+	protected $file;
+	public function __construct($path,$params) {
+		global $factory;
+		$this->header = "packages";
+
+		if(isset($path[2]) || (isset($path[1]) && $path[1] != "setup"))
+			$this->api_error();
+		if(isset($params["file"])) {
+			if(!is_file($factory.$params["file"]))
+				$this->output_error("Unknown file: ".$params["file"]);
+			$this->file = $factory.$params["file"];
+		}
+	}
+
+	public function post($path,$params,$data) {
+		global $factory;
+		if(isset($path[1]))
+			$this->api_error();
+		if(!isset($params["method"]) || $params["method"] != "serverSetupFile")
+			throw new Exception("Unset/unknown 'method' parameter");
+
+		// Retrieve package creation data
+		if(!is_file($factory.$data))
+			$this->output_error("Unknown file: ".$data);
+		$file = $factory.$data;
+		$package_setup = parse_json($file);
+
+		// Setting some dirs
+		$factoryDir = "/apps/toolbox/factory/".$package_setup->rn_name;
+		$factoryDebDir = "$factoryDir/DEBIAN";
+		$factoryAppsDir = "$factoryDir/apps/".$package_setup->rn_name;
+		$packageDir = dirname($file);
+
+		// Copy skeleton files
+		execute("cp -R /apps/toolbox/factory/skeleton $factoryDir");
+
+		// --------------------------------
+		// Skeleton update for the web-app
+		// --------------------------------
+		@rename($factoryDir."/apps/skeleton",$factoryAppsDir) or throw_error();
+
+		// Update skeleton values in files
+		$searchFor = array("rn_name","cap_name","deb_name","version","description");
+		foreach($searchFor as $suffix)
+			$replace["skeleton_".$suffix] = $package_setup->$suffix;
+		replace_text(array("$factoryDebDir/control","$factoryAppsDir/config.xml","$factoryAppsDir/https.conf"),$replace);
+
+		// Update DEBIAN control file
+		$depends[] = "rntoolbox (>= ".$package_setup->debian->toolbox_version.")";
+		foreach ($package_setup->dependencies as $dep) {
+			if (isset($dep->min_version))
+				$suffix = " (>= ".$dep->min_version.")";
+			$depends[] = $dep->package.$suffix;
+		}
+		replace_text("$factoryDebDir/control", array("skeleton_depends" => implode(", ",$depends)));
+
+		// Insert config data in DEBIAN maintainer scripts
+		$parameters = "APPNAME=".$package_setup->rn_name.PHP_EOL;
+		foreach ($package_setup->debian as $var => $value)
+			$parameters .= "$var=$value".PHP_EOL;
+		replace_text(array("$factoryDebDir/postinst","$factoryDebDir/postrm","$factoryDebDir/prerm"),array("##PARAMETERS##" => $parameters));
+
+		// Modify https.conf if necessary
+		if (isset($package_setup->apache_group)) {
+			if ($package_setup->apache_group == "admin") {
+				$replace["##AdminAuth##"] = "";
+			} else {
+				$replace["skeleton_group"] = $package_setup->apache_group;
+				$replace["##GroupAuth##"] = "";
+			}
+			replace_text("$factoryAppsDir/https.conf", $replace);
+		}
+
+		// Build setup.json file
+		@mkdir("$factoryAppsDir/initial-setup",0755) or throw_error();
+		@file_put_contents("$factoryAppsDir/initial-setup/setup.json",json_encode($package_setup->setup,JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) or throw_error();
+		// Copy post-install script
+		if (isset($package_setup->setup->custom_script)) {
+			$sourceFile = $packageDir."/".$package_setup->setup->custom_script;
+			if(!is_file($sourceFile)) { throw new Exception("File ".$package_setup->setup->custom_script." not found"); }
+			@copy($sourceFile,$factoryAppsDir."/initial-setup/".$package_setup->setup->custom_script) or throw_error();
+		}
+
+		// Include package if necessary
+		if ($package_setup->setup->deployment == "included") {
+			$archiveName = $package_setup->setup->url;
+			@copy($packageDir."/$archiveName",$factoryAppsDir."/$archiveName") or throw_error();
+		}
+
+		// logo.png update
+		if (is_file($packageDir."/logo.png"))
+			@copy($packageDir."/logo.png",$factoryAppsDir."/logo.png") or throw_error();
+
+		// Generate deb file
+		$debFile = $packageDir."/".$package_setup->deb_name."_".$package_setup->version."_all.deb";
+		execute("fakeroot dpkg -b $factoryDir $debFile");
+		// Clean it up
+		delete_dir($factoryDir,true);
+		// Return deb file path
+		answer(str_replace($factory,"",$debFile));
+	}
+}
+
 class API_log {
 	public function get($path,$params,$data) {
 		answer(array_reverse(file('/apps/toolbox/log')));
 	}
 }
+
+$shares = new SimpleXMLElement(shell_exec("rn_nml -g shares"));
+$admin_share = "/".$shares->xpath('//Share[@share-name="admin"]/@id')[0];
+$factory = "$admin_share/factory";
 
 // URL path & params retrieval
 $path = array_filter(explode("/", substr(@$_SERVER['PATH_INFO'], 1))); // array_filter to remove empty elements

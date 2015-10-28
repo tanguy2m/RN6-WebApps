@@ -1,0 +1,45 @@
+{
+    "readme": {
+		"rn_name": "ReadyNas name of the application",
+		"cap_name": "User-friendly name of the application ex: Skeleton",
+		"deb_name": "DEBIAN package name",
+		"version": "Application version (DEBIAN package and RN app)",
+		"description": "Detailed description of the application",
+		"dependencies": "DEBIAN dependencies ('package': package name, 'min_version': min version to be installed)",
+		"debian": "Parameters used by DEBIAN maintainer scripts",
+		"debian/toolbox_version": "For toolbox scripts compatibility if necessary",
+		"debian/mysql": "{true;false} if true, MySQL user and DB will be created",
+		"apache_group": "OPTIONAL: group allowed to access (admin or other)",
+		"setup": "setup file for web files update"
+    },
+	"rn_name": "webapp",
+	"cap_name": "Web application",
+	"deb_name": "rnwebapp",
+	"version": "0.1.0",
+	"description": "Pretty cool web application",
+	"dependencies": [
+		{"package": "php5", "min_version": "5.4"}
+	],
+	"debian": {
+		"toolbox_version": "0.1",
+		"mysql": "false"
+	},
+	"apache_group": "admin",
+	"setup": {
+		"readme": {
+			"deployment": "{included,external} if the archive is included in the package or not",
+			"url": "if 'external', file path or url. If 'included', file name (should be stored in the same folder)",
+			"custom_script": "OPTIONAL: custom configure scripts (.sh or .php). Web and config files will be set-up, not MySQL.",
+			"config_files": "OPTIONAL: list of config files to move to config share. Paths are relative to /web"
+		},
+		"deployment": "external",
+		"url": "http://domain.com/archive.zip",
+		"custom_script": "custom_configure.sh",
+		"config_files": [
+			{
+				"source_path": "config.sample.inc.php",
+				"destination_path": "config.inc.php"
+			}
+		]
+	}
+}
