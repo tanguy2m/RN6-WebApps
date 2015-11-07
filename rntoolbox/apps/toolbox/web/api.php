@@ -125,6 +125,16 @@ class API {
 	}
 }
 
+class API_apps extends API {
+	public function __construct() {
+		$this->header = "apps";
+	}
+	public function post($path,$params,$data) { // POST /apps
+		global $factory;
+		execute("rn_nml -I ".$factory.$data);
+	}
+}
+
 class API_packages extends API {
 	protected $file;
 	public function __construct($path,$params) {
@@ -138,6 +148,21 @@ class API_packages extends API {
 				$this->output_error("Unknown file: ".$params["file"]);
 			$this->file = $factory.$params["file"];
 		}
+	}
+
+	public function get($path,$params,$data) {
+		global $factory;
+
+		$dir = new RecursiveDirectoryIterator($factory);
+		$pattern = "*.deb"; // GET /packages
+		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.$pattern/", RegexIterator::GET_MATCH);
+		$packages = array();
+		foreach($files as $file) {
+			$package = new stdClass;
+			$package->path = str_replace($factory,"",$file[0]);
+			$packages[] = $package;
+		}
+		answer($packages);
 	}
 
 	public function post($path,$params,$data) {
