@@ -155,11 +155,33 @@ class API_packages extends API {
 
 		$dir = new RecursiveDirectoryIterator($factory);
 		$pattern = "*.deb"; // GET /packages
+		if(isset($path[1])) { // GET /packages/setup
+			$pattern = "*package.json";
+		}
 		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.$pattern/", RegexIterator::GET_MATCH);
 		$packages = array();
 		foreach($files as $file) {
 			$package = new stdClass;
 			$package->path = str_replace($factory,"",$file[0]);
+			if(isset($path[1])) {
+				try {
+					$package_setup = parse_json($file[0]);
+					if(isset($package_setup->config->custom_script)) {
+						$relatedFile = rtrim(dirname($package->path),'/').'/'.$package_setup->config->custom_script;
+						if(!is_file($factory.$relatedFile)) // This setup file is not valid
+							throw new Exception("File ".$relatedFile." does not exist");
+						$package->relatedFile = $relatedFile;
+					}
+					$package->valid = true;
+					$package->appname = $package_setup->rn_name;
+					$package->version = $package_setup->version;
+					$package->description = $package_setup->description;
+
+				} catch (Exception $e) {
+					$package->valid = false;
+					$package->error = $e->getMessage();
+				}
+			}
 			$packages[] = $package;
 		}
 		answer($packages);
