@@ -129,6 +129,18 @@ class API_apps extends API {
 	public function __construct() {
 		$this->header = "apps";
 	}
+	public static function getList() {
+		$apps = array();
+		foreach (new DirectoryIterator("/apps") as $fileInfo) {
+			if($fileInfo->isDir() && !$fileInfo->isDot() && is_file($fileInfo->getPathName()."/.webapp")) {
+				$apps[] = $fileInfo->getFilename();
+			}
+		}
+		return $apps;
+	}
+	public function get($path,$params,$data) { // GET /apps
+		answer($this::getList());
+	}
 	public function post($path,$params,$data) { // POST /apps
 		global $factory;
 		execute("rn_nml -I ".$factory.$data);
