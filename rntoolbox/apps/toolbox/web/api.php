@@ -147,6 +147,44 @@ class API_apps extends API {
 	}
 }
 
+class API_files extends API {
+	protected $name;
+	protected function dir($type) {
+		global $admin_share;
+		$suffix = "";
+		switch($type) {
+			case "conf": return "$admin_share/config/".$this->name; // conf dir of the application
+			case "setup": return "$admin_share/setup/".$this->name; // setup dir of the application
+			case "web": $suffix = "/web"; // dir containing web files in home dir
+			case "app":
+				$toolbox_custo = json_decode(file_get_contents("$admin_share/config/toolbox/config.json"));
+				return $toolbox_custo->apps_dir."/".$this->name.$suffix; // home dir of the application
+		}
+	}
+
+	public function __construct($path,$params) {
+		$this->header = "apps";
+
+		// Check errors
+		if (!in_array($path[1],API_apps::getList()))
+			$this->output_error("Unknown application: ".$path[1]);
+		if (!isset($path[3]))
+			$this->api_error();
+
+		$this->header = $path[1];
+		$this->name = $path[1];
+	}
+
+	public function get($path,$params,$data) {
+		if ($path[3] != "conf" && $path[3] != "setup")
+			$this->api_error();
+
+		// GET /apps/APPNAME/files/{conf,setup}
+		if (!isset($path[4]))
+			answer(array_map('basename', glob($this->dir($path[3])."/*")));
+	}
+}
+
 class API_packages extends API {
 	protected $file;
 	public function __construct($path,$params) {
@@ -316,6 +354,10 @@ $params = array(); parse_str(@$_SERVER['QUERY_STRING'],$params);
 if (!isset($path[0]))
 	answer("Unknown API",400);
 switch ($path[0]) {
+    case "apps":
+		if (isset($path[2]) && $path[2] == "files") {
+			$resource = 'API_files'; break;
+		}
 	default:
 		$resource = 'API_'.$path[0]; break;
 }
