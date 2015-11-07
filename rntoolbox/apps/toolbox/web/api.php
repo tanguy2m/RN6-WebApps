@@ -202,7 +202,94 @@ class API_files extends API {
 
 				@file_put_contents($filepath,$data,LOCK_EX) or throw_error();
 				break;
+			case "all": // PUT /apps/APPNAME/files/all
+				if (isset($path[4]))
+					$this->api_error();
+				$this->log("Update all files");
 
+				////////////////////////
+				// Setup files update //
+				////////////////////////
+				if (!is_file($this->dir("setup")."/setup.json")) {
+					execute("cp ".$this->dir("app")."/initial-setup/* ".$this->dir("setup")."/");
+				}
+				$custo = parse_json($this->dir("setup")."/setup.json");
+
+				//////////////////////
+				// Web files update //
+				//////////////////////
+
+				// Delete all files stored in web folder
+				$web = $this->dir("web");
+				delete_dir($web);
+
+				// Static files download and deployment
+				$ext = pathinfo($custo->url,PATHINFO_EXTENSION);
+				$tmp = "$web/archive.$ext";
+				if ($custo->deployment == "included")
+					$prefix = $this->dir("app")."/";
+				@copy($prefix.$custo->url, $tmp) or throw_error();
+
+				switch ($ext) {
+					case "zip":
+						$zip = new ZipArchive;
+						if ($zip->open($tmp) !== true) throw_error();
+						$zip->extractTo($web) or throw_error();
+						$zip->close();
+						@unlink($tmp) or throw_error();
+
+						$webFiles = array_values(array_diff(scandir($web), array('..', '.')));
+						if ((count($webFiles) == 1) && is_dir($web."/$webFiles[0]")) {
+							// There is a top level directory
+							execute("(shopt -s dotglob && mv ".$web."/$webFiles[0]/* ".$web."/)");
+							@rmdir($web."/$webFiles[0]") or throw_error();
+						}
+						break;
+					default:
+						throw new Exception("Unsupported archive format");
+						break;
+				}
+
+				////////////////////////////
+				// Config files migration //
+				////////////////////////////
+
+				if (count($custo->config_files) > 0) {
+
+					foreach ($custo->config_files as &$config_file) {
+						if(!is_file($web."/".$config_file->source_path))
+							throw new Exception("Unknown configuration file: ".$config_file->source_path);
+						$local_config_file = $this->dir("conf")."/".basename($config_file->destination_path);
+						$edited = (is_file($local_config_file) && (md5_file($local_config_file) != $config_file->md5sum));
+						// Store the new default config file md5
+						$config_file->md5sum = md5_file($web."/".$config_file->source_path);
+						// Move the config file, keeping the edited one if necessary
+						@rename($web."/".$config_file->source_path,$local_config_file.($edited ? ".default" : "")) or throw_error();
+						// Replace source file by a link to the local file
+						@symlink($local_config_file,$web."/".$config_file->destination_path) or throw_error();
+					}
+
+					// Update custo file with md5 config files values
+					@file_put_contents($this->dir("setup")."/setup.json", json_encode($custo,JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) or throw_error();
+				}
+
+				/////////////////////////////
+				// Custom configure script //
+				/////////////////////////////
+				if (isset($custo->custom_script)) {
+					switch (pathinfo($custo->custom_script, PATHINFO_EXTENSION)) {
+						case "sh":
+							shell_exec($this->dir("setup")."/".$custo->custom_script);
+							break;
+						case "php":
+							include $this->dir("setup")."/".$custo->custom_script;
+							break;
+						default:
+							throw new Exception("Script language not supported");
+							break;
+					}
+				}
+			break;
 			default:
 				throw new Exception("Unknown API: ".implode("/",$path));
 		}
