@@ -294,6 +294,14 @@ class API_files extends API {
 				throw new Exception("Unknown API: ".implode("/",$path));
 		}
 	}
+
+	public function delete($path,$params,$data) {
+		if($path[3] == "web") { // DELETE /apps/APPNAME/files/web
+			$this->log("Remove requested");
+			// Conf files and mysql database are kept
+		}
+		delete_dir($this->dir("web")); // Delete all files stored in web folder
+	}
 }
 
 class API_packages extends API {
