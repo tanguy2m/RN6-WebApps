@@ -182,6 +182,30 @@ class API_files extends API {
 		// GET /apps/APPNAME/files/{conf,setup}
 		if (!isset($path[4]))
 			answer(array_map('basename', glob($this->dir($path[3])."/*")));
+
+		// GET /apps/APPNAME/files/{conf,setup}/FILENAME
+		$filepath = $this->dir($path[3])."/".$path[4];
+		if (!is_file($filepath))
+			throw new Exception("File unknown");
+		readfile($filepath);
+	}
+
+	public function put($path,$params,$data) {
+		switch ($path[3]) {
+			case "conf":  // PUT /apps/APPNAME/files/conf/FILENAME
+			case "setup": // PUT /apps/APPNAME/files/setup/FILENAME
+				if (!isset($path[4]))
+					$this->api_error();
+				$filepath = $this->dir($path[3])."/".$path[4];
+				if (!is_file($filepath))
+					throw new Exception("File unknown");
+
+				@file_put_contents($filepath,$data,LOCK_EX) or throw_error();
+				break;
+
+			default:
+				throw new Exception("Unknown API: ".implode("/",$path));
+		}
 	}
 }
 
