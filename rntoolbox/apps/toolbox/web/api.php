@@ -153,6 +153,10 @@ class API_packages extends API {
 	public function get($path,$params,$data) {
 		global $factory;
 
+		if(isset($params["file"])) {
+			readfile($this->file); die;
+		}
+
 		$dir = new RecursiveDirectoryIterator($factory);
 		$pattern = "*.deb"; // GET /packages
 		if(isset($path[1])) { // GET /packages/setup
@@ -185,6 +189,12 @@ class API_packages extends API {
 			$packages[] = $package;
 		}
 		answer($packages);
+	}
+
+	public function put($path,$params,$data) {
+		if (!isset($path[1],$params["file"]))
+			$this->api_error();
+		@file_put_contents($this->file,$data,LOCK_EX) or throw_error();
 	}
 
 	public function post($path,$params,$data) {
