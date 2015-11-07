@@ -299,6 +299,11 @@ class API_files extends API {
 		if($path[3] == "web") { // DELETE /apps/APPNAME/files/web
 			$this->log("Remove requested");
 			// Conf files and mysql database are kept
+		} else if ($path[3] == "all") { // DELETE /apps/APPNAME/files/all
+			$this->log("Purge requested");
+			// Remove conf & setup files
+			delete_dir($this->dir("conf"));
+			delete_dir($this->dir("setup"));
 		}
 		delete_dir($this->dir("web")); // Delete all files stored in web folder
 	}
