@@ -165,7 +165,70 @@ $(document).ready(function () {
 					$("#packages").data("new",answer);
 					$("#packages").trigger("refresh");
 				});
+		})
+		.on("click",'a[href="#save"]', function(event) { // Save modified file
+			event.preventDefault();
+			$.ajax({
+				url: $("#files>.active").data("url"),
+				type: "PUT",
+				processData: false,
+				data: editor.getValue()
+			})
+			.done(function(answer) {
+				$("#packages_setup").trigger("refresh");
+			});
 		});
+
+	////////////////////////
+	//    File editing    //
+	////////////////////////
+	var editor = ace.edit("file_content");
+	editor.setTheme("ace/theme/chrome");
+	editor.getSession().setUseWrapMode(true);
+
+	$("#editFiles")
+		.on('show.bs.modal', function(e) { // Customize modal
+			var type = $(e.relatedTarget).data("type");
+			switch(type) {
+				case "conf":
+				case "setup":
+					var appname = $(e.relatedTarget).parentsUntil("#apps").last().data("name");
+					$(this).find(".modal-title").text(appname+" "+type+" files");
+					$.get("api.php/apps/"+appname+"/files/"+type, function(files) {
+						$(files).each(function(i,file) {
+							$("#file_name_template").clone().removeAttr("id").removeClass("hidden")
+								.replaceText("FILENAME",file)
+								.data("url","api.php/apps/"+appname+"/files/"+type+"/"+file)
+								.appendTo("#files");
+						});
+					});
+					break;
+				case "package":
+					$(this).find(".modal-title").text("Package setup files");
+					$item = $(e.relatedTarget).parentsUntil("#packages_setup").last();
+					$.each($item.data("files"),function(i,file) {
+						$("#file_name_template").clone().removeAttr("id").removeClass("hidden")
+							.replaceText("FILENAME",file)
+							.data("url","api.php/packages/setup?file="+file)
+							.appendTo("#files");
+					});
+					break;
+			}
+		})
+		.on('shown.bs.modal', function(e) {$('#files>:visible:first').tab("show");}) // Activate tab
+		.on('hide.bs.modal', function(e) { // Reset modal
+			$(this).find(".modal-title").empty();
+			$('#files>:visible').remove();
+			editor.setValue("",-1);
+		});
+
+	// Retrieve tab content
+	$('#files').on('shown.bs.tab','>', function(e) {
+		$url = $(e.target).data("url");
+		var mode = ace.require("ace/ext/modelist").getModeForPath($url).mode;
+		editor.getSession().setMode(mode);
+		$.get($url, function(content) {editor.setValue(content,-1);});
+	});
 
 	////////////
 	//  Init  //

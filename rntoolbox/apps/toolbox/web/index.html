@@ -47,6 +47,9 @@
 				vertical-align: middle;
 			}
 			.actions > * :first-child { text-align: right; }
+
+			.editor { height: 400px; }
+			#files { margin-bottom: 15px; }
 		</style>
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -58,6 +61,25 @@
 	</head>
 	<body>
 		<div class="container">
+
+			<!-- File editor window -->
+			<div class="modal fade" id="editFiles" tabindex="-1" role="dialog">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title"></h4>
+						</div>
+						<div class="modal-body">
+							<a class="btn btn-success pull-right" href="#save" role="button">Save<span class="glyphicon glyphicon-save"></span></a>
+							<ul id="files" class="nav nav-pills">
+								<li id="file_name_template" role="presentation" data-toggle="pill" class="hidden"><a href="#">FILENAME</a></li>
+							</ul>
+							<div id="file_content" class="editor"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<!-- Build packages part -->
 			<h1 class="small-header">Build packages<small><a href="#packages_setup"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
@@ -150,6 +172,15 @@
 
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 		<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<!-- Ace editor -->
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-modelist.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/theme-chrome.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/mode-json.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/worker-php.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/mode-php.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/mode-sh.js"></script>
+		<!---->
 		<script src="index.js"></script>
 	</body>
 </html>
