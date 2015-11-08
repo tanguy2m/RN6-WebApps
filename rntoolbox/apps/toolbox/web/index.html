@@ -11,6 +11,8 @@
 		<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
 		<style type="text/css">
 			h1 .glyphicon { margin-left: 10px; }
+			a.btn > span.glyphicon { margin-left: 5px; }
+			.panel-body strong { margin-right: 5px; }
 		</style>
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -22,6 +24,36 @@
 	</head>
 	<body>
 		<div class="container">
+
+			<!-- Build packages part -->
+			<h1 class="small-header">Build packages<small><a href="#packages_setup"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
+			<p>Packages' setup files (*package.json) shall be uploaded in <mark><samp>//admin/factory/</samp></mark></p>
+			<div id="packages_setup" class="row">
+				<div id="package_setup_true_template" class="col-md-4 hidden">
+					<div class="panel panel-success">
+						<div class="panel-heading clearfix">
+							<span>Setup: </span><strong><samp>PATH</samp></strong>
+							<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
+						</div>
+						<div class="panel-body package_setup">
+							<p><strong>HEADER</strong><span>DESCRIPTION</span></p>
+							<a class="btn btn-primary pull-right" href="#build" role="button">Build<span class="glyphicon glyphicon-compressed"></span></a>
+						</div>
+					</div>
+				</div>
+				<div id="package_setup_false_template" class="col-md-4 hidden">
+					<div class="panel panel-danger">
+						<div class="panel-heading clearfix">
+							<span>Setup: </span><strong><samp>PATH</samp></strong>
+							<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
+						</div>
+						<div class="panel-body">
+							<p class="text-danger">ERROR</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<!-- Log file -->
 			<h1 class="small-header">Log file<small><a href="#log"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
 			<div id="log" style="max-height:200px; overflow:auto;"></div>

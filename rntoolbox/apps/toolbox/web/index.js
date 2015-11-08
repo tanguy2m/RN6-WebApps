@@ -65,6 +65,29 @@ $(document).ready(function () {
 	//  Refresh events handlers  //
 	///////////////////////////////
 
+	// Packages setup list
+	$("#packages_setup").on("refresh",function(event) {
+		var $this = $(this);
+		$this.find(">:visible").remove();
+		$.get("api.php/packages/setup", function(answer) {
+			$(answer).each(function(i,package) {
+				$package_setup = $("#package_setup_"+package.valid+"_template").clone().removeAttr("id").removeClass("hidden")
+					.replaceText("PATH",package.path)
+					.data("files",{path:package.path});
+				if (package.valid){
+					$package_setup
+						.replaceText("HEADER",package.appname+" v"+package.version)
+						.replaceText("DESCRIPTION",package.description);
+					if (package.relatedFile)
+						$package_setup.data("files").relatedFile = package.relatedFile;
+				} else {
+					$package_setup.replaceText("ERROR",package.error);
+				}
+				$package_setup.appendTo($this);
+			});
+		});
+	});
+
 	// Log file
 	$("#log").on("refresh",function(event) {
 		var $this = $(this);
@@ -85,10 +108,19 @@ $(document).ready(function () {
 			event.preventDefault();
 			var selector = $(this).parent().attr("href");
 			$(selector).trigger("refresh");
+		})
+		.on("click",'a[href="#build"]', function(event) { // Build package
+			event.preventDefault();
+			apiCall("POST","/packages?method=serverSetupFile",$(this).parentsUntil("#packages_setup").last().data("files").path)
+				.done(function(answer) {
+					$("#packages").data("new",answer);
+					$("#packages").trigger("refresh");
+				});
 		});
 
 	////////////
 	//  Init  //
 	////////////
+	$("#packages_setup").trigger("refresh");
 	$("#log").trigger("refresh");
 });
