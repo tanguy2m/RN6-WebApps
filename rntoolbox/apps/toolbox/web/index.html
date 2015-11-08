@@ -13,6 +13,7 @@
 			h1 .glyphicon { margin-left: 10px; }
 			a.btn > span.glyphicon { margin-left: 5px; }
 			.panel-body strong { margin-right: 5px; }
+			.well { word-break: break-word; }
 		</style>
 
 		<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -50,6 +51,20 @@
 						<div class="panel-body">
 							<p class="text-danger">ERROR</p>
 						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Install packages part -->
+			<h1 class="small-header">Install packages<small><a href="#packages"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
+			<p>Packages are searched in <mark><samp>//admin/factory/</mark></samp></p>
+			<div id="packages" class="row">
+				<div id="package_template" class="col-md-6 hidden">
+					<div class="well well-sm clearfix">
+						<img src="images/deb.svg">
+						<samp>PATH</samp>
+						<span class="label label-success hidden">New !</span>
+						<a class="btn btn-primary pull-right" href="#install" style="margin-top: 8px;">Install<span class="glyphicon glyphicon-save"></span></a>
 					</div>
 				</div>
 			</div>

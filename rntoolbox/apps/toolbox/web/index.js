@@ -88,6 +88,23 @@ $(document).ready(function () {
 		});
 	});
 
+	// Packages list
+	$("#packages").on("refresh",function(event) {
+		var $this = $(this);
+		$this.find(">:not([id])").remove();
+		$.get("api.php/packages", function(answer) {
+			$(answer).each(function(i,package) {
+				$package = $("#package_template").clone().removeAttr("id").removeClass("hidden")
+					.replaceText("PATH",package.path)
+					.data("path",package.path);
+				if (package.path == $this.data("new")) {
+					$package.find(".label").removeClass("hidden");
+				}
+				$package.appendTo($this);
+			});
+		});
+	});
+
 	// Log file
 	$("#log").on("refresh",function(event) {
 		var $this = $(this);
@@ -109,6 +126,10 @@ $(document).ready(function () {
 			var selector = $(this).parent().attr("href");
 			$(selector).trigger("refresh");
 		})
+		.on("click",'a[href="#install"]', function(event) { // Install package
+			event.preventDefault();
+			apiCall("POST","/apps",$(this).parentsUntil("#packages").last().data("path"));
+		})
 		.on("click",'a[href="#build"]', function(event) { // Build package
 			event.preventDefault();
 			apiCall("POST","/packages?method=serverSetupFile",$(this).parentsUntil("#packages_setup").last().data("files").path)
@@ -122,5 +143,6 @@ $(document).ready(function () {
 	//  Init  //
 	////////////
 	$("#packages_setup").trigger("refresh");
+	$("#packages").trigger("refresh");
 	$("#log").trigger("refresh");
 });
