@@ -105,6 +105,20 @@ $(document).ready(function () {
 		});
 	});
 
+	// Apps list
+	$("#apps").on("refresh",function(event) {
+		var $this = $(this);
+		$this.find(">:visible").remove();
+		$.get("api.php/apps", function(answer) {
+			$(answer).each(function(i,appname) {
+				$app = $("#app_template").clone().removeAttr("id").removeClass("hidden")
+					.replaceText("APPNAME",appname)
+					.data("name",appname)
+					.appendTo($this);
+			});
+		});
+	});
+
 	// Log file
 	$("#log").on("refresh",function(event) {
 		var $this = $(this);
@@ -126,6 +140,20 @@ $(document).ready(function () {
 			var selector = $(this).parent().attr("href");
 			$(selector).trigger("refresh");
 		})
+		.on("click",'a[href="#update"]', function(event) { // Update files
+			event.preventDefault();
+			$.ajax({
+				url: "api.php/apps/"+$(this).parentsUntil("#apps").last().data("name")+"/files/all",
+				type: "PUT"
+			});
+		})
+		.on("click",'a[href="#delete"]', function(event) { // Delete files
+			event.preventDefault();
+			$.ajax({
+				url: "api.php/apps/"+$(this).parentsUntil("#apps").last().data("name")+"/files/"+$(this).data("type"),
+				type: "DELETE"
+			});
+		})
 		.on("click",'a[href="#install"]', function(event) { // Install package
 			event.preventDefault();
 			apiCall("POST","/apps",$(this).parentsUntil("#packages").last().data("path"));
@@ -144,5 +172,6 @@ $(document).ready(function () {
 	////////////
 	$("#packages_setup").trigger("refresh");
 	$("#packages").trigger("refresh");
+	$("#apps").trigger("refresh");
 	$("#log").trigger("refresh");
 });
