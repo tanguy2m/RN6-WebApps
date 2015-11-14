@@ -4,59 +4,6 @@
 //    Utilities    //
 /////////////////////
 
-function answer($message,$code = '200'){
-	switch ($code) {
-		case 100: $text = 'Continue'; break;
-		case 101: $text = 'Switching Protocols'; break;
-		case 200: $text = 'OK'; break;
-		case 201: $text = 'Created'; break;
-		case 202: $text = 'Accepted'; break;
-		case 203: $text = 'Non-Authoritative Information'; break;
-		case 204: $text = 'No Content'; break;
-		case 205: $text = 'Reset Content'; break;
-		case 206: $text = 'Partial Content'; break;
-		case 300: $text = 'Multiple Choices'; break;
-		case 301: $text = 'Moved Permanently'; break;
-		case 302: $text = 'Moved Temporarily'; break;
-		case 303: $text = 'See Other'; break;
-		case 304: $text = 'Not Modified'; break;
-		case 305: $text = 'Use Proxy'; break;
-		case 400: $text = 'Bad Request'; break;
-		case 401: $text = 'Unauthorized'; break;
-		case 402: $text = 'Payment Required'; break;
-		case 403: $text = 'Forbidden'; break;
-		case 404: $text = 'Not Found'; break;
-		case 405: $text = 'Method Not Allowed'; break;
-		case 406: $text = 'Not Acceptable'; break;
-		case 407: $text = 'Proxy Authentication Required'; break;
-		case 408: $text = 'Request Time-out'; break;
-		case 409: $text = 'Conflict'; break;
-		case 410: $text = 'Gone'; break;
-		case 411: $text = 'Length Required'; break;
-		case 412: $text = 'Precondition Failed'; break;
-		case 413: $text = 'Request Entity Too Large'; break;
-		case 414: $text = 'Request-URI Too Large'; break;
-		case 415: $text = 'Unsupported Media Type'; break;
-		case 422: $text = 'Unprocessable Entity'; break;
-		case 500: $text = 'Internal Server Error'; break;
-		case 501: $text = 'Not Implemented'; break;
-		case 502: $text = 'Bad Gateway'; break;
-		case 503: $text = 'Service Unavailable'; break;
-		case 504: $text = 'Gateway Time-out'; break;
-		case 505: $text = 'HTTP Version not supported'; break;
-		default:
-			throw new Exception("Unknown HTTP status code '$code'");
-		break;
-	}
-	$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-	header($protocol . ' ' . $code . ' ' . $text);
-
-	$message = is_array($message) ? $message : array($message);
-	header('Content-Type: application/json');
-	echo json_encode($message);
-	die;
-}
-
 function throw_error() {
 	throw new Exception("[".basename(error_get_last()["file"])." #".error_get_last()["line"]."] ".error_get_last()["message"]);
 }
@@ -106,29 +53,178 @@ function replace_text($files,$replace) {
 	}
 }
 
+///////////////////////
+//   REST handlers   //
+///////////////////////
+
+class APIerror extends Exception {}
+
+abstract class RESThandler {
+	// Input data
+	protected $fullPath = "";
+	protected $path = array();
+	protected $params = array();
+	protected $method = "";
+	protected $data = "";
+	// Referenced objects
+	private $api; // API object
+
+	protected function get_long_code($success,$code) {
+		$long_code = new stdClass;
+		$success_codes = array(
+			200 => 'OK',
+			201 => 'Created',
+			204 => 'No Content',
+			304 => 'Not Modified'
+		);
+		$error_codes = array (
+			400 => 'Bad Request',
+			401 => 'Unauthorized',
+			403 => 'Forbidden',
+			404 => 'Not Found',
+			405 => 'Method Not Allowed',
+			406 => 'Not Acceptable',
+			409 => 'Conflict',
+			422 => 'Unprocessable Entity',
+			500 => 'Internal Server Error'
+		);
+
+		// Set code
+		$long_code->code = $code;
+		if ($success && !array_key_exists($code, $success_codes))
+			$long_code->code = 200;
+		if (!$success && !array_key_exists($code, $error_codes))
+			$long_code->code = 400;
+
+		// Set text
+		$long_code->text = $success ? $success_codes[$code] : $error_codes[$code];
+		return $long_code;
+	}
+
+	// Abstract functions
+	abstract protected function answer($message,$success,$code);
+
+	// Common functions
+	protected function output_error($message,$code=400) {
+		if (isset($this->api))
+			$this->api->log($message);
+		else
+			API_log::toFile("API",$message);
+		$this->answer($message,false,$code);
+	}
+	public function run() {
+		try {
+			// Parse path
+			$this->path = array_filter(explode("/", substr($this->fullPath,1))); // array_filter to remove empty elements
+			// Resource retrieval
+			if (!isset($this->path[0]))
+				throw new APIerror();
+			$resource = 'API_'.$this->path[0];
+			if ($this->path[0] == "apps" && isset($this->path[2]) && $this->path[2] == "files") {
+				$resource = 'API_files';
+			}
+
+			// Check resource and method
+			if (!class_exists($resource))
+				throw new Exception("Unknown resource name",400);
+			$this->api = new $resource($this->path,$this->params);
+			if (!method_exists($resource,$this->method))
+				throw new Exception("Unsupported action",405);
+
+			// Launch relevant API method
+			$method = $this->method;
+			$output = $this->api->$method($this->path,$this->params,$this->data);
+			if (!is_null($output))
+				$this->answer($output,true,200);
+		} catch (APIerror $e) {
+			$message = "Unknown API: ".strtoupper($this->method)." ".$this->fullPath;
+			if (count($this->params)>0)
+				$message .= "?".http_build_query($this->params);
+			$this->output_error($message,'400');
+		} catch (Exception $e) {
+			$this->output_error($e->getMessage(),$e->getCode());
+		}
+	}
+}
+
+class HTTPhandler extends RESThandler {
+	protected function answer($message,$success,$code) {
+		$long_code = $this->get_long_code($success,$code);
+		$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+		header($protocol . ' ' . $long_code->code . ' ' . $long_code->text);
+
+		$message = is_array($message) ? $message : array($message);
+		header('Content-Type: application/json');
+		echo json_encode($message);
+		die;
+	}
+	public function __construct() {
+		// Full path
+		$this->fullPath = @$_SERVER['PATH_INFO'];
+		// Params
+		parse_str(@$_SERVER['QUERY_STRING'],$this->params);
+		// Method
+		$this->method = strtolower($_SERVER['REQUEST_METHOD']);
+		// Payload
+		$this->data = file_get_contents('php://input');
+		if (($this->method === "post" || $this->method === "put") &&
+			isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'],'application/json') !== false &&
+			!$this->data = json_decode($this->data)) {
+				$this->output_error("Unsupported request body",400);
+		}
+	}
+}
+
+class CLIhandler extends RESThandler {
+	protected function answer($message,$success,$code) {
+		if ($success) {
+			echo json_encode($message, JSON_UNESCAPED_SLASHES).PHP_EOL;
+			exit(0);
+		} else {
+			$long_code = $this->get_long_code($success,$code);
+			fwrite(STDERR, "[$long_code->code: $long_code->text] ".$message.PHP_EOL);
+			exit(1);
+		}
+	}
+	public function __construct() {
+		global $argv;
+		$opts = getopt("crud",array("path:","file:","method:","data:","v:"));
+		if (!is_array($opts))
+			$this->output_error("Invalid command line arguments: ".implode(" ",array_slice($argv,1)),406);
+		$action = array();
+		foreach (array_keys($opts) as $opt) switch ($opt) {
+			case 'c': $action[] = "post"; break;
+			case 'r': $action[] = "get"; break;
+			case 'u': $action[] = "put"; break;
+			case 'd': $action[] = "delete"; break;
+			case 'path':
+				$this->fullPath = $opts["path"]; break;
+			case 'file':
+			case 'method':
+				$this->params[$opt] = $opts[$opt]; break;
+			case 'data':
+				$this->data = $opts["data"]; break;
+		}
+		if (count($action) == 1)
+			$this->method = $action[0];
+		else
+			$this->output_error("Invalid number of api verbs",405);
+	}
+}
+
 /////////////////////
 //   Web app API   //
 /////////////////////
 
 class API {
-	protected $header = "";
+	protected $header;
 	public function log($message) {
-		$prefix = date("Y/m/d H:i:s")." [".$this->header."] ";
-		file_put_contents("/apps/toolbox/log", $prefix.$message.PHP_EOL, FILE_APPEND | LOCK_EX);
-	}
-	public function output_error($message) {
-		$this->log($message);
-		answer($message,"500");
-	}
-	public function api_error() {
-		$this->output_error("Unknown API: ".$_SERVER['REQUEST_METHOD']." ".$_SERVER['PATH_INFO'].$_SERVER['QUERY_STRING']);
+		API_log::toFile($this->header,$message);
 	}
 }
 
 class API_apps extends API {
-	public function __construct() {
-		$this->header = "apps";
-	}
+	public $header = "apps";
 	public static function getList() {
 		$apps = array();
 		foreach (new DirectoryIterator("/apps") as $fileInfo) {
@@ -139,7 +235,7 @@ class API_apps extends API {
 		return $apps;
 	}
 	public function get($path,$params,$data) { // GET /apps
-		answer($this::getList());
+		return $this::getList();
 	}
 	public function post($path,$params,$data) { // POST /apps
 		global $factory;
@@ -148,6 +244,7 @@ class API_apps extends API {
 }
 
 class API_files extends API {
+	public $header = "apps";
 	protected $name;
 	protected function dir($type) {
 		global $admin_share;
@@ -163,13 +260,11 @@ class API_files extends API {
 	}
 
 	public function __construct($path,$params) {
-		$this->header = "apps";
-
 		// Check errors
 		if (!in_array($path[1],API_apps::getList()))
-			$this->output_error("Unknown application: ".$path[1]);
+			throw new Exception("Unknown application: ".$path[1],404);
 		if (!isset($path[3]))
-			$this->api_error();
+			throw new APIerror();
 
 		$this->header = $path[1];
 		$this->name = $path[1];
@@ -177,17 +272,17 @@ class API_files extends API {
 
 	public function get($path,$params,$data) {
 		if ($path[3] != "conf" && $path[3] != "setup")
-			$this->api_error();
+			throw new APIerror();
 
 		// GET /apps/APPNAME/files/{conf,setup}
 		if (!isset($path[4]))
-			answer(array_map('basename', glob($this->dir($path[3])."/*")));
+			return array_map('basename', glob($this->dir($path[3])."/*"));
 
 		// GET /apps/APPNAME/files/{conf,setup}/FILENAME
 		$filepath = $this->dir($path[3])."/".$path[4];
 		if (!is_file($filepath))
 			throw new Exception("File unknown");
-		readfile($filepath);
+		readfile($filepath); die;
 	}
 
 	public function put($path,$params,$data) {
@@ -195,7 +290,7 @@ class API_files extends API {
 			case "conf":  // PUT /apps/APPNAME/files/conf/FILENAME
 			case "setup": // PUT /apps/APPNAME/files/setup/FILENAME
 				if (!isset($path[4]))
-					$this->api_error();
+					throw new APIerror();
 				$filepath = $this->dir($path[3])."/".$path[4];
 				if (!is_file($filepath))
 					throw new Exception("File unknown");
@@ -204,7 +299,7 @@ class API_files extends API {
 				break;
 			case "all": // PUT /apps/APPNAME/files/all
 				if (isset($path[4]))
-					$this->api_error();
+					throw new APIerror();
 				$this->log("Update all files");
 
 				////////////////////////
@@ -310,16 +405,16 @@ class API_files extends API {
 }
 
 class API_packages extends API {
+	public $header = "packages";
 	protected $file;
 	public function __construct($path,$params) {
 		global $factory;
-		$this->header = "packages";
 
 		if(isset($path[2]) || (isset($path[1]) && $path[1] != "setup"))
-			$this->api_error();
+			throw new APIerror();
 		if(isset($params["file"])) {
 			if(!is_file($factory.$params["file"]))
-				$this->output_error("Unknown file: ".$params["file"]);
+				throw new Exception("Unknown file: ".$params["file"]);
 			$this->file = $factory.$params["file"];
 		}
 	}
@@ -362,25 +457,25 @@ class API_packages extends API {
 			}
 			$packages[] = $package;
 		}
-		answer($packages);
+		return $packages;
 	}
 
 	public function put($path,$params,$data) {
 		if (!isset($path[1],$params["file"]))
-			$this->api_error();
+			throw new APIerror();
 		@file_put_contents($this->file,$data,LOCK_EX) or throw_error();
 	}
 
 	public function post($path,$params,$data) {
 		global $factory;
 		if(isset($path[1]))
-			$this->api_error();
+			throw new APIerror();
 		if(!isset($params["method"]) || $params["method"] != "serverSetupFile")
 			throw new Exception("Unset/unknown 'method' parameter");
 
 		// Retrieve package creation data
 		if(!is_file($factory.$data))
-			$this->output_error("Unknown file: ".$data);
+			throw new Exception("Unknown file: ".$data,404);
 		$file = $factory.$data;
 		$package_setup = parse_json($file);
 
@@ -456,57 +551,34 @@ class API_packages extends API {
 		// Clean it up
 		delete_dir($factoryDir,true);
 		// Return deb file path
-		answer(str_replace($factory,"",$debFile));
+		return str_replace($factory,"",$debFile);
 	}
 }
 
 class API_log {
+	private static $path = "/apps/toolbox/log";
+	public static function toFile($header,$message) {
+		$prefix = date("Y/m/d H:i:s")." [".$header."] ";
+		file_put_contents(self::$path, $prefix.$message.PHP_EOL, FILE_APPEND | LOCK_EX);
+	}
 	public function get($path,$params,$data) {
-		answer(array_reverse(file('/apps/toolbox/log')));
+		return array_reverse(file(self::$path));
 	}
 }
+
+////////////////////
+//      Main      //
+////////////////////
 
 $shares = new SimpleXMLElement(shell_exec("rn_nml -g shares"));
 $admin_share = "/".$shares->xpath('//Share[@share-name="admin"]/@id')[0];
 $factory = "$admin_share/factory";
 
-// URL path & params retrieval
-$path = array_filter(explode("/", substr(@$_SERVER['PATH_INFO'], 1))); // array_filter to remove empty elements
-$params = array(); parse_str(@$_SERVER['QUERY_STRING'],$params);
-
-// Resource retrieval
-if (!isset($path[0]))
-	answer("Unknown API",400);
-switch ($path[0]) {
-    case "apps":
-		if (isset($path[2]) && $path[2] == "files") {
-			$resource = 'API_files'; break;
-		}
-	default:
-		$resource = 'API_'.$path[0]; break;
-}
-if (!class_exists($resource))
-	answer("Unknown resource name",400);
-$handler = new $resource($path,$params);
-
-// HTTP method retrieval
-$method = strtolower($_SERVER['REQUEST_METHOD']);
-if (!method_exists($handler,$method))
-	answer("Unsupported action",405);
-
-// Payload retrieval and decoding
-$data = file_get_contents('php://input');
-if (($method === "post" || $method === "put") &&
-	isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'],'application/json') !== false &&
-	!$data = json_decode($data)) {
-		answer("Unsupported request body",400);
-}
-
-// Launch relevant API method
-try {
-	$handler->$method($path,$params,$data);
-} catch (Exception $e) {
-	$handler->output_error($e->getMessage());
+// Launch HTTP or CLI handler
+if (php_sapi_name() == "cli") {
+	(new CLIhandler())->run();
+} else {
+	(new HTTPhandler())->run();
 }
 
 ?>
