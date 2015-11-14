@@ -35,10 +35,7 @@ case "$1" in
 		####################
 		#   Files update   #
 		####################
-		STATUS=`curl -s -X PUT -w "%{http_code}\\n" "http://localhost/apps/toolbox/api.php/apps/$APPNAME/files/all?v=$toolbox_version" -o /dev/null)`
-		if [ $STATUS != 200 ]; then
-			error_exit "Cannot update files. HTTP error: $STATUS"
-		fi
+		php /apps/toolbox/web/api.php -u --path /apps/$APPNAME/files/all --v $toolbox_version || error_exit "Cannot update files"
 
 		##################
 		#      MYSQL     #
