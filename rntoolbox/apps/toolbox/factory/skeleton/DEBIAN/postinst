@@ -17,6 +17,8 @@
 ##PARAMETERS##
 . /apps/toolbox/scripts/utils.sh
 
+_log "Postinst called with the following arguments: $@"
+
 case "$1" in
 	configure)
 

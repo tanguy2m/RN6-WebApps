@@ -16,6 +16,8 @@
 ##PARAMETERS##
 . /apps/toolbox/scripts/utils.sh
 
+_log "Postrm called with the following arguments: $@"
+
 case "$1" in
 
     purge)
