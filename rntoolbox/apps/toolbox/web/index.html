@@ -52,7 +52,29 @@
 			#files { margin-bottom: 15px; }
 		</style>
 	</head>
+
 	<body>
+
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<span class="navbar-brand">Web apps toolbox</span>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav navbar-right">
+						<li class="active"><a href="#tab_manage" role="tab" data-toggle="tab">Manage installed</a></li>
+						<li><a href="#tab_install" role="tab" data-toggle="tab">Install</a></li>
+						<li><a href="#tab_build" role="tab" data-toggle="tab">Build</a></li>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div><!-- /.container-fluid -->
+		</nav>
+
 		<div class="container">
 
 			<!-- File editor window -->
@@ -74,84 +96,92 @@
 				</div>
 			</div>
 
-			<!-- Build packages part -->
-			<h1 class="small-header">Build packages<small><a href="#packages_setup"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
-			<p>Packages' setup files (*package.json) shall be uploaded in <mark><samp>//admin/factory/</samp></mark></p>
-			<div id="packages_setup" class="row">
-				<div id="package_setup_true_template" class="col-md-4 hidden">
-					<div class="panel panel-success">
-						<div class="panel-heading clearfix">
-							<span>Setup: </span><strong><samp>PATH</samp></strong>
-							<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
-						</div>
-						<div class="panel-body package_setup">
-							<p><strong>HEADER</strong><span>DESCRIPTION</span></p>
-							<a class="btn btn-primary pull-right" href="#build" role="button">Build<span class="glyphicon glyphicon-compressed"></span></a>
-						</div>
-					</div>
-				</div>
-				<div id="package_setup_false_template" class="col-md-4 hidden">
-					<div class="panel panel-danger">
-						<div class="panel-heading clearfix">
-							<span>Setup: </span><strong><samp>PATH</samp></strong>
-							<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
-						</div>
-						<div class="panel-body">
-							<p class="text-danger">ERROR</p>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Install packages part -->
-			<h1 class="small-header">Install packages<small><a href="#packages"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
-			<p>Packages are searched in <mark><samp>//admin/factory/</mark></samp></p>
-			<div id="packages" class="row">
-				<div id="package_template" class="col-md-6 hidden">
-					<div class="well well-sm clearfix">
-						<img src="images/deb.svg">
-						<samp>PATH</samp>
-						<span class="label label-success hidden">New !</span>
-						<a class="btn btn-primary pull-right" href="#install" style="margin-top: 8px;">Install<span class="glyphicon glyphicon-save"></span></a>
-					</div>
-				</div>
-			</div>
-
-			<!-- Manage installed web applications -->
-			<h1 class="small-header">Manage installed web-apps<small><a href="#apps"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
-			<div id="apps" class="row">
-				<div id="app_template" class="col-md-6 hidden">
-					<div class="well well-sm">
-						<div class="app">
-							<div>
-								<img width="75" height="75" data-src="https://192.168.56.101/apps/logo/APPNAME.png">
-								<div><strong>APPNAME</strong></div>
-							</div>
-							<div>
-								<div class="actions">
-									<div>
-										<div>config</div>
-										<div>
-											<a class="btn btn-info" href="#editFiles" role="button" data-toggle="modal" data-type="conf">Modify<span class="glyphicon glyphicon-pencil"></span></a>
-										</div>
-									</div>
-									<div>
-										<div>setup</div>
-										<div>
-											<a class="btn btn-info" href="#editFiles" role="button" data-toggle="modal" data-type="setup">Modify<span class="glyphicon glyphicon-pencil"></span></a>
-										</div>
-									</div>
-									<div>
-										<div>web</div>
-										<div>
-											<a href="#delete" role="button" data-type="web">Delete<span class="glyphicon glyphicon-trash"></span></a>
-										</div>
-									</div>
+			<div class="tab-content">
+				<!-- Build packages part -->
+				<div role="tabpanel" class="tab-pane fade" id="tab_build">
+					<h1 class="small-header">Build packages<small><a href="#packages_setup"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
+					<p>Packages' setup files (*package.json) shall be uploaded in <mark><samp>//admin/factory/</samp></mark></p>
+					<div id="packages_setup" class="row">
+						<div id="package_setup_true_template" class="col-md-4 hidden">
+							<div class="panel panel-success">
+								<div class="panel-heading clearfix">
+									<span>Setup: </span><strong><samp>PATH</samp></strong>
+									<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
+								</div>
+								<div class="panel-body package_setup">
+									<p><strong>HEADER</strong><span>DESCRIPTION</span></p>
+									<a class="btn btn-primary pull-right" href="#build" role="button">Build<span class="glyphicon glyphicon-compressed"></span></a>
 								</div>
 							</div>
-							<div>
-								<div><a class="btn btn-primary" style="margin-bottom: 10px;" href="#update" role="button">Update<span class="glyphicon glyphicon-refresh"></span></a></div>
-								<div><a href="#delete" role="button" data-type="web">Delete<span class="glyphicon glyphicon-trash"></span></a></div>
+						</div>
+						<div id="package_setup_false_template" class="col-md-4 hidden">
+							<div class="panel panel-danger">
+								<div class="panel-heading clearfix">
+									<span>Setup: </span><strong><samp>PATH</samp></strong>
+									<a class="btn-sm btn-info pull-right" href="#editFiles" role="button" data-toggle="modal" data-type="package"><span class="glyphicon glyphicon-pencil"></span></a>
+								</div>
+								<div class="panel-body">
+									<p class="text-danger">ERROR</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Install packages part -->
+				<div role="tabpanel" class="tab-pane fade" id="tab_install">
+					<h1 class="small-header">Install packages<small><a href="#packages"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
+					<p>Packages are searched in <mark><samp>//admin/factory/</mark></samp></p>
+					<div id="packages" class="row">
+						<div id="package_template" class="col-md-6 hidden">
+							<div class="well well-sm clearfix">
+								<img src="images/deb.svg">
+								<samp>PATH</samp>
+								<span class="label label-success hidden">New !</span>
+								<a class="btn btn-primary pull-right" href="#install" style="margin-top: 8px;">Install<span class="glyphicon glyphicon-save"></span></a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Manage installed web applications -->
+				<div role="tabpanel" class="tab-pane fade in active" id="tab_manage">
+					<h1 class="small-header">Manage installed web-apps<small><a href="#apps"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
+					<div id="apps" class="row">
+						<div id="app_template" class="col-md-6 hidden">
+							<div class="well well-sm">
+								<div class="app">
+									<div>
+										<img width="75" height="75" data-src="https://192.168.56.101/apps/logo/APPNAME.png">
+										<div><strong>APPNAME</strong></div>
+									</div>
+									<div>
+										<div class="actions">
+											<div>
+												<div>config</div>
+												<div>
+													<a class="btn btn-info" href="#editFiles" role="button" data-toggle="modal" data-type="conf">Modify<span class="glyphicon glyphicon-pencil"></span></a>
+												</div>
+											</div>
+											<div>
+												<div>setup</div>
+												<div>
+													<a class="btn btn-info" href="#editFiles" role="button" data-toggle="modal" data-type="setup">Modify<span class="glyphicon glyphicon-pencil"></span></a>
+												</div>
+											</div>
+											<div>
+												<div>web</div>
+												<div>
+													<a href="#delete" role="button" data-type="web">Delete<span class="glyphicon glyphicon-trash"></span></a>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div>
+										<div><a class="btn btn-primary" style="margin-bottom: 10px;" href="#update" role="button">Update<span class="glyphicon glyphicon-refresh"></span></a></div>
+										<div><a href="#delete" role="button" data-type="web">Delete<span class="glyphicon glyphicon-trash"></span></a></div>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
