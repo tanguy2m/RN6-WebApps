@@ -1,7 +1,7 @@
 #!/bin/sh
 # Utilities script to be included in packages routines
 
-LOGFILE=/apps/toolbox/log
+LOGFILE=/var/log/rntoolbox
 _log() {
 	if [ ! -f "$LOGFILE" ]; then
 		touch ${LOGFILE}

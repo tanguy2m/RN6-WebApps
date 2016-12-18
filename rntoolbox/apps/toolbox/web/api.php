@@ -556,7 +556,7 @@ class API_packages extends API {
 }
 
 class API_log {
-	private static $path = "/apps/toolbox/log";
+	private static $path = "/var/log/rntoolbox";
 	public static function toFile($header,$message) {
 		$prefix = date("Y/m/d H:i:s")." [".$header."] ";
 		file_put_contents(self::$path, $prefix.$message.PHP_EOL, FILE_APPEND | LOCK_EX);
