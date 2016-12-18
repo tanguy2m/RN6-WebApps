@@ -97,7 +97,7 @@ abstract class RESThandler {
 			$long_code->code = 400;
 
 		// Set text
-		$long_code->text = $success ? $success_codes[$code] : $error_codes[$code];
+		$long_code->text = $success ? $success_codes[$long_code->code] : $error_codes[$long_code->code];
 		return $long_code;
 	}
 
