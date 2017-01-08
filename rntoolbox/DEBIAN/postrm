@@ -20,14 +20,38 @@ _log() {
 #		* <disappearer's-postrm> `disappear' <r>overwrit>r> <new-version>
 # for details, see /usr/share/doc/packaging-manual/
 
+# Function deleting a share if it exists
+# Parameters:
+#  - share name
+deleteShare() {
+	sharePath=$(rn_nml -g shares | xmllint --xpath "string(//Share[@share-name='$1']/@id)" -)
+	if [ ! -z "$sharePath" ]; then # If the share exists
+		rn_nml -d share:/$sharePath # Delete it
+	fi
+}
+
 _log "Postrm called with the following arguments: $@"
 
 case "$1" in
 	purge)
-		rm -rf $APPDIR
-		systemctl restart apache2.service
-		event_push app readynasd '<delete-s resource-type="LocalApp" resource-id="LocalApp"><LocalApp appname="$APPNAME" success="1"></delete-s>' 0 0
-		;;
+		# Delete 'admin' share
+		deleteShare admin
+		# Real purge, no backup of conf, setup & factory files !
+
+		# MySQL password file is not deleted (if MySQL by other applications)
+
+		# Delete 'mysql' share
+		# It should be empty because all apps will be removed before
+		deleteShare mysql
+
+		if systemctl restart apache2.service; then
+			# success
+			event_push app readynasd '<delete-s resource-type="LocalApp" resource-id="LocalApp"><LocalApp appname="$APPNAME" success="1"/></delete-s>' 0 0
+		else
+			# error
+			event_push app readynasd '<delete-s resource-type="LocalApp" resource-id="LocalApp"><LocalApp appname="$APPNAME" success="0"/></delete-s>' 0 0
+		fi
+	;;
 
 	remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
 	;;
