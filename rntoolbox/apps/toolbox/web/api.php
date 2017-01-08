@@ -248,14 +248,11 @@ class API_files extends API {
 	protected $name;
 	protected function dir($type) {
 		global $admin_share;
-		$suffix = "";
 		switch($type) {
 			case "conf": return "$admin_share/config/".$this->name; // conf dir of the application
 			case "setup": return "$admin_share/setup/".$this->name; // setup dir of the application
-			case "web": $suffix = "/web"; // dir containing web files in home dir
-			case "app":
-				$toolbox_custo = json_decode(file_get_contents("$admin_share/config/toolbox/config.json"));
-				return $toolbox_custo->apps_dir."/".$this->name.$suffix; // home dir of the application
+			case "web": return "/apps/".$this->name."/web"; // dir containing web files in home dir
+			case "app": return "/apps/".$this->name; // home dir of the application
 		}
 	}
 

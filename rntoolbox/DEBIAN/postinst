@@ -57,18 +57,6 @@ EOF
 		# Vérificaton de la présence du share "mysql"
 		mysqlSharePath=$(createShare mysql)
 
-		# Copy default config files
-		confPath="/$adminSharePath/config/toolbox"
-		mkdir -p $confPath
-		for file in $(ls -A $APPDIR/default-config) # List all files except . and ..
-		do
-			suffix=""
-			if [ -f "$confPath/$file" ]; then
-				suffix=".original"
-			fi
-			cp "$APPDIR/default-config/$file" "$confPath/$file$suffix"
-		done
-
 		# Factory set-up
 		factorySource="/$adminSharePath/factory"
 		mkdir -p $factorySource

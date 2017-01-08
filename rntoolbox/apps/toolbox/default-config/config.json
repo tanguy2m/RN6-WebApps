@@ -1,6 +1,0 @@
-{
-    "readme": {
-        "apps_dir": "Root apps folder, /apps in PROD, /data/Documents in DEV"
-    },
-    "apps_dir": "/apps"
-}
