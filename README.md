@@ -1,13 +1,16 @@
-# ReadyNAS6-apps
-Custom applications for ReadyNAS OS6
+# ReadyNAS 0S6 web apps Manager
+This ReadyNAS OS6 application aims at streamlining web applications management on a ReadyNAS (OS6):
 
-# Build rntoolbox
-1. Copy source files
-2. Update permissions
+ - Web-app packaging
+ - Web-app installation (including MySQL) / uninstallation
+ - Web-app update / backup
+ - Web-app configuration modification
+
+All this through a Web interface, no need to connect through SSH to the NAS.
+
+Build the application
+----------------------
 ```bash
-chmod 755 -R rntoolbox/
+build.sh
 ```
-3. Create package
-```bash
-dpkg-deb -b rntoolbox rntoolbox_0.0.1_all.deb
-```
+rntoolbox .deb package will be stored in the `packages/` folder
