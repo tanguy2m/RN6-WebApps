@@ -39,19 +39,24 @@ case "$1" in
 
 		# MySQL root password creation
 		# Source: https://dev.mysql.com/doc/refman/5.5/en/password-security-user.html
-		MYSQL_CONFIG=~/.my.cnf
+		MYSQL_CONFIG=/root/.my.cnf
 		if [ ! -f "$MYSQL_CONFIG" ]; then
+			touch $MYSQL_CONFIG || error_exit "Cannot create MySQL config file"
+			chmod 0600 $MYSQL_CONFIG
 			# Random password generation (10 alphanumerical characters)
 			MYSQL_PASS=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c10)
 			# Root password modification, whatever the host
-			mysql -u root -e "UPDATE mysql.user SET Password=PASSWORD('${MYSQL_PASS}') WHERE User='root'; FLUSH PRIVILEGES;"
-			# Storage in MySQL options file
-			cat > $MYSQL_CONFIG <<EOF
+			if mysql -u root -e "UPDATE mysql.user SET Password=PASSWORD('${MYSQL_PASS}') WHERE User='root'; FLUSH PRIVILEGES;"; then
+				# Storage in MySQL options file
+				cat > $MYSQL_CONFIG <<EOF
 [client]
 user="root"
 password="${MYSQL_PASS}"
 EOF
-			chmod 0600 $MYSQL_CONFIG
+			else
+				rm -f $MYSQL_CONFIG
+				error_exit "Cannot change MySQL root password (not empty?)"
+			fi
 		fi
 
 		# Vérificaton de la présence du share "mysql"
