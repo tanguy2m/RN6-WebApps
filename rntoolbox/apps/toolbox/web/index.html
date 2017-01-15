@@ -107,7 +107,7 @@
 						<p>Packages' setup files (*package.json) shall be uploaded in <mark><samp>//admin/factory/</samp></mark></p>
 						<div class="alert alert-info" role="alert">No setup file found</div>
 						<div id="packages_setup" class="row">
-							<div id="package_setup_true_template" class="col-md-4 hidden">
+							<div id="package_setup_true_template" class="col-md-6 hidden">
 								<div class="panel panel-success">
 									<div class="panel-heading clearfix">
 										<span>Setup: </span><strong><samp>PATH</samp></strong>
@@ -119,7 +119,7 @@
 									</div>
 								</div>
 							</div>
-							<div id="package_setup_false_template" class="col-md-4 hidden">
+							<div id="package_setup_false_template" class="col-md-6 hidden">
 								<div class="panel panel-danger">
 									<div class="panel-heading clearfix">
 										<span>Setup: </span><strong><samp>PATH</samp></strong>
@@ -131,12 +131,19 @@
 								</div>
 							</div>
 						</div>
+						<form class="form-inline">
+							<div class="form-group">
+								<label>Create set-up folder with sample file: </label>
+								<input type="text" class="form-control" placeholder="Name"/>
+							</div>
+							<button type="submit" class="btn btn-default">Create</button>
+						</form>
 					</div>
 
 					<!-- Install packages part -->
 					<div role="tabpanel" class="tab-pane fade" id="tab_install">
 						<h1 class="small-header">Install packages<small><a href="#packages"><span class="glyphicon glyphicon-refresh"></span></a></small></h1>
-						<p>Packages are searched in <mark><samp>//admin/factory/</mark></samp></p>
+						<p>Packages are searched in <mark><samp>//admin/factory/</samp></mark></p>
 						<div class="alert alert-info" role="alert">No package found</div>
 						<div id="packages" class="row">
 							<div id="package_template" class="col-md-6 hidden">

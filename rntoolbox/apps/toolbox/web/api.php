@@ -465,8 +465,14 @@ class API_packages extends API {
 
 	public function post($path,$params,$data) {
 		global $factory;
-		if(isset($path[1]))
-			throw new APIerror();
+
+		if(isset($path[1])) { // POST /packages/setup
+			$setupDir = "/data/admin/factory/".$data;
+			@mkdir($setupDir,0755) or throw_error();
+			@copy("/apps/toolbox/factory/package_sample.json",$setupDir."/package.json") or throw_error();
+			exit;
+		}
+
 		if(!isset($params["method"]) || $params["method"] != "serverSetupFile")
 			throw new Exception("Unset/unknown 'method' parameter");
 

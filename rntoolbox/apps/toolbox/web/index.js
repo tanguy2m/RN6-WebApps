@@ -180,7 +180,16 @@ $(document).ready(function () {
 			.done(function(answer) {
 				$("#packages_setup").trigger("refresh");
 			});
-		});
+		})
+    .on("submit","#tab_build > form", function(event) { // Create set-up folder
+      event.preventDefault();
+      $input = $(this).find("input");
+      apiCall("POST","/packages/setup",$input.val())
+        .done(function(answer) {
+          $("#packages_setup").trigger("refresh");
+          $input.val("");
+        });
+    });
 
 	////////////////////////
 	//    File editing    //
