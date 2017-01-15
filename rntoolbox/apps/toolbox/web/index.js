@@ -70,6 +70,7 @@ $(document).ready(function () {
 		var $this = $(this);
 		$this.find(">:visible").remove();
 		$.get("api.php/packages/setup", function(answer) {
+      $("#tab_build").find(".alert").toggleClass("hidden",(answer.length != 0));
 			$(answer).each(function(i,package) {
 				$package_setup = $("#package_setup_"+package.valid+"_template").clone().removeAttr("id").removeClass("hidden")
 					.replaceText("PATH",package.path)
@@ -93,6 +94,7 @@ $(document).ready(function () {
 		var $this = $(this);
 		$this.find(">:not([id])").remove();
 		$.get("api.php/packages", function(answer) {
+      $("#tab_install").find(".alert").toggleClass("hidden",(answer.length != 0));
 			$(answer).each(function(i,package) {
 				$package = $("#package_template").clone().removeAttr("id").removeClass("hidden")
 					.replaceText("PATH",package.path)
@@ -110,6 +112,7 @@ $(document).ready(function () {
 		var $this = $(this);
 		$this.find(">:visible").remove();
 		$.get("api.php/apps", function(answer) {
+      $("#tab_manage").find(".alert").toggleClass("hidden",(answer.length != 0));
 			$(answer).each(function(i,appname) {
 				$app = $("#app_template").clone().removeAttr("id").removeClass("hidden")
 					.replaceText("APPNAME",appname)
