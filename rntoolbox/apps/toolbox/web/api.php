@@ -125,6 +125,10 @@ abstract class RESThandler {
 			if ($this->path[0] == "packages"
 				&& isset($this->path[1]) && $this->path[1] == "setup") {
 				$resource = 'API_setups';
+
+				if (isset($this->path[2])) {
+					$resource = 'API_setup_files';
+				}
 			}
 
 			if ($this->path[0] == "apps"
@@ -519,28 +523,9 @@ class API_packages extends API {
 
 class API_setups extends API {
 	public $header = "packages_setup";
-	protected $file;
-
-	public function __construct($path,$params) {
-		global $factory;
-
-		if(isset($path[2]))
-			throw new APIerror();
-
-		if(isset($params["file"])) {
-			if(!is_file($factory.$params["file"]))
-				throw new Exception("Unknown file: ".$params["file"]);
-			$this->file = $factory.$params["file"];
-		}
-	}
 
 	public function get($path,$params,$data) { // GET /packages/setup
 		global $factory;
-
-		if(isset($params["file"])) { // GET /packages/setup?file=/path/to/file
-			readfile($this->file); die;
-		}
-
 		$dir = new RecursiveDirectoryIterator($factory);
 		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.*package.json/", RegexIterator::GET_MATCH);
 		$packages = array();
@@ -569,17 +554,43 @@ class API_setups extends API {
 		return $packages;
 	}
 
-	public function put($path,$params,$data) {
-		if (!isset($path[1],$params["file"]))
-			throw new APIerror();
-		@file_put_contents($this->file,$data,LOCK_EX) or throw_error();
-	}
-
 	public function post($path,$params,$data) {
 		global $factory;
 		$setupDir = $factory."/".$data;
 		@mkdir($setupDir,0755) or throw_error();
 		@copy("/apps/toolbox/factory/package_sample.json",$setupDir."/package.json") or throw_error();
+	}
+}
+
+class API_setup_files extends API {
+	public $header = "setup_files";
+	private $source;
+
+	public function __construct($path,$params) {
+		global $factory;
+
+		// Check path
+		$files = array("source");
+		if (!in_array($path[2],$files) || isset($path[3]))
+			throw new APIerror();
+
+		// Check 'source' parameter
+		if (isset($params["source"])) {
+			if (!is_file($factory.$params["source"]))
+				throw new Exception("Unknown file: ".$params["source"]);
+			$this->source = $factory.$params["source"];
+		} else {
+			throw new Exception("'source' parameter is mandatory");
+		}
+
+	}
+
+	public function get($path,$params,$data) {
+		readfile($this->source);
+	}
+
+	public function put($path,$params,$data) {
+		@file_put_contents($this->source,$data,LOCK_EX) or throw_error();
 	}
 }
 

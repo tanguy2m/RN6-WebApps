@@ -221,7 +221,7 @@ $(document).ready(function () {
 					$.each($item.data("files"),function(i,file) {
 						$("#file_name_template").clone().removeAttr("id").removeClass("hidden")
 							.replaceText("FILENAME",file)
-							.data("url","api.php/packages/setup?file="+file)
+							.data("url","api.php/packages/setup/source?source="+file)
 							.appendTo("#files");
 					});
 					break;
