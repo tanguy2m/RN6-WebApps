@@ -115,12 +115,20 @@ abstract class RESThandler {
 	public function run() {
 		try {
 			// Parse path
-			$this->path = array_filter(explode("/", substr($this->fullPath,1))); // array_filter to remove empty elements
+			// array_filter to remove empty elements
+			$this->path = array_filter(explode("/", substr($this->fullPath,1)));
 			// Resource retrieval
 			if (!isset($this->path[0]))
 				throw new APIerror();
 			$resource = 'API_'.$this->path[0];
-			if ($this->path[0] == "apps" && isset($this->path[2]) && $this->path[2] == "files") {
+
+			if ($this->path[0] == "packages"
+				&& isset($this->path[1]) && $this->path[1] == "setup") {
+				$resource = 'API_setups';
+			}
+
+			if ($this->path[0] == "apps"
+				&& isset($this->path[2]) && $this->path[2] == "files") {
 				$resource = 'API_files';
 			}
 
@@ -403,75 +411,26 @@ class API_files extends API {
 
 class API_packages extends API {
 	public $header = "packages";
-	protected $file;
 	public function __construct($path,$params) {
-		global $factory;
-
-		if(isset($path[2]) || (isset($path[1]) && $path[1] != "setup"))
+		if(isset($path[1]))
 			throw new APIerror();
-		if(isset($params["file"])) {
-			if(!is_file($factory.$params["file"]))
-				throw new Exception("Unknown file: ".$params["file"]);
-			$this->file = $factory.$params["file"];
-		}
 	}
 
 	public function get($path,$params,$data) {
 		global $factory;
-
-		if(isset($params["file"])) {
-			readfile($this->file); die;
-		}
-
 		$dir = new RecursiveDirectoryIterator($factory);
-		$pattern = "*.deb"; // GET /packages
-		if(isset($path[1])) { // GET /packages/setup
-			$pattern = "*package.json";
-		}
-		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.$pattern/", RegexIterator::GET_MATCH);
+		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.*.deb/", RegexIterator::GET_MATCH);
 		$packages = array();
 		foreach($files as $file) {
 			$package = new stdClass;
 			$package->path = str_replace($factory,"",$file[0]);
-			if(isset($path[1])) {
-				try {
-					$package_setup = parse_json($file[0]);
-					if(isset($package_setup->config->custom_script)) {
-						$relatedFile = rtrim(dirname($package->path),'/').'/'.$package_setup->config->custom_script;
-						if(!is_file($factory.$relatedFile)) // This setup file is not valid
-							throw new Exception("File ".$relatedFile." does not exist");
-						$package->relatedFile = $relatedFile;
-					}
-					$package->valid = true;
-					$package->appname = $package_setup->rn_name;
-					$package->version = $package_setup->version;
-					$package->description = $package_setup->description;
-
-				} catch (Exception $e) {
-					$package->valid = false;
-					$package->error = $e->getMessage();
-				}
-			}
 			$packages[] = $package;
 		}
 		return $packages;
 	}
 
-	public function put($path,$params,$data) {
-		if (!isset($path[1],$params["file"]))
-			throw new APIerror();
-		@file_put_contents($this->file,$data,LOCK_EX) or throw_error();
-	}
-
 	public function post($path,$params,$data) {
 		global $factory;
-
-		if(isset($path[1])) { // POST /packages/setup
-			$setupDir = "/data/admin/factory/".$data;
-			@mkdir($setupDir,0755) or throw_error();
-			@copy("/apps/toolbox/factory/package_sample.json",$setupDir."/package.json") or throw_error();
-			exit;
-		}
 
 		if(!isset($params["method"]) || $params["method"] != "serverSetupFile")
 			throw new Exception("Unset/unknown 'method' parameter");
@@ -555,6 +514,72 @@ class API_packages extends API {
 		delete_dir($factoryDir,true);
 		// Return deb file path
 		return str_replace($factory,"",$debFile);
+	}
+}
+
+class API_setups extends API {
+	public $header = "packages_setup";
+	protected $file;
+
+	public function __construct($path,$params) {
+		global $factory;
+
+		if(isset($path[2]))
+			throw new APIerror();
+
+		if(isset($params["file"])) {
+			if(!is_file($factory.$params["file"]))
+				throw new Exception("Unknown file: ".$params["file"]);
+			$this->file = $factory.$params["file"];
+		}
+	}
+
+	public function get($path,$params,$data) { // GET /packages/setup
+		global $factory;
+
+		if(isset($params["file"])) { // GET /packages/setup?file=/path/to/file
+			readfile($this->file); die;
+		}
+
+		$dir = new RecursiveDirectoryIterator($factory);
+		$files = new RegexIterator(new RecursiveIteratorIterator($dir),"/.*package.json/", RegexIterator::GET_MATCH);
+		$packages = array();
+		foreach($files as $file) {
+			$package = new stdClass;
+			$package->path = str_replace($factory,"",$file[0]);
+			try {
+				$package_setup = parse_json($file[0]);
+				if(isset($package_setup->config->custom_script)) {
+					$relatedFile = rtrim(dirname($package->path),'/').'/'.$package_setup->config->custom_script;
+					if(!is_file($factory.$relatedFile)) // This setup file is not valid
+						throw new Exception("File ".$relatedFile." does not exist");
+					$package->relatedFile = $relatedFile;
+				}
+				$package->valid = true;
+				$package->appname = $package_setup->rn_name;
+				$package->version = $package_setup->version;
+				$package->description = $package_setup->description;
+
+			} catch (Exception $e) {
+				$package->valid = false;
+				$package->error = $e->getMessage();
+			}
+			$packages[] = $package;
+		}
+		return $packages;
+	}
+
+	public function put($path,$params,$data) {
+		if (!isset($path[1],$params["file"]))
+			throw new APIerror();
+		@file_put_contents($this->file,$data,LOCK_EX) or throw_error();
+	}
+
+	public function post($path,$params,$data) {
+		global $factory;
+		$setupDir = $factory."/".$data;
+		@mkdir($setupDir,0755) or throw_error();
+		@copy("/apps/toolbox/factory/package_sample.json",$setupDir."/package.json") or throw_error();
 	}
 }
 
